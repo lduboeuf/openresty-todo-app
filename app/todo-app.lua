@@ -15,12 +15,14 @@ _M.create = function()
   local data = ngx.req.get_body_data()
   if data then
       local todo = cjson.decode(data)
-      local query = "INSERT INTO task (task, status) VALUES (\""..todo.task.."\","..todo.status..")"
+      local query = "INSERT INTO task (task, priority) VALUES (\""..todo.task.."\","..todo.priority..")"
       local res, err = mysql_exec(query, connect_opts)
       if not res then
         ngx.status = 500
       else
         ngx.status = 201 --created
+        todo.id = res.insert_id
+        ngx.say(cjson.encode(todo))
       end
   end
 
@@ -31,7 +33,7 @@ _M.delete = function(params)
   if not res then
     ngx.status = 500
   else
-    ngx.status = 200
+    ngx.status = 204
   end
 end
 
@@ -40,12 +42,13 @@ _M.update = function(params)
   local data = ngx.req.get_body_data()
   if data then
       local todo = cjson.decode(data)
-      local query = "UPDATE task SET task=\""..todo.task.."\" , status="..todo.status.." WHERE id="..params.id
+      local query = "UPDATE task SET task=\""..todo.task.."\" , priority="..todo.priority.." WHERE id="..params.id
       local res, err = mysql_exec(query, connect_opts)
       if not res then
         ngx.status = 500
       else
         ngx.status = 200
+        ngx.say(cjson.encode(todo))
       end
   end
 end

@@ -1,0 +1,241 @@
+ <!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <title>Testouilles</title>
+    <!-- On peut avoir d'autres méta-données ici -->
+    <style>
+
+
+      #editTodoForm.edit {
+        display:none;
+
+      }
+    </style>
+  </head>
+  <body>
+
+  <div id="monDiv">
+    <input type="text" id="addTodoTxt" placeholder="nom de la tâche" />
+    <input type="button" id="addTodoBtn" value="ok"/>
+  </div>
+  <ul id="todoList">
+  </ul>
+
+  <div id="editTodoForm" class="edit">
+    <input type="text" id="editTodoTxt" placeholder="nom de la tâche" />
+    <input type="button" id="editTodoBtn" value="ok"/>
+  </div>
+  <script>
+
+  var todoUl = document.getElementById('todoList');
+
+  var addTodoBtn = document.getElementById('addTodoBtn');
+  var addTodoTxt = document.getElementById('addTodoTxt');
+
+  var editForm = document.getElementById('editTodoForm');
+  var editTodoBtn = document.getElementById('editTodoBtn');
+  var editTodoTxt = document.getElementById('editTodoTxt');
+
+  var selectedTodoId;
+
+  var tempTodo;
+
+  var todos;
+
+
+  var displayTodos = function(todos){
+    for (var i=0; i <todos.length; i++){
+      addTodo(todos[i]);
+    }
+  }
+
+  function createXHR() {
+    try {
+        return new XMLHttpRequest();
+    } catch (e) {
+        try {
+            return new ActiveXObject("Microsoft.XMLHTTP");
+        } catch (e) {
+            return new ActiveXObject("Msxml2.XMLHTTP");
+        }
+    }
+  }
+
+
+var xhr = createXHR();
+xhr.addEventListener('error', function(event) {
+    alert('oups something wrong with server ?');
+  });
+
+
+var TodoStore = {
+  req : xhr,
+  prefix: "api/v0.1",
+
+  loadTodos: function(){
+    //var req = new XMLHttpRequest();
+    this.req.open('GET', this.prefix +'/todos', true);
+    this.req.onload = function () {
+         if(this.status == 200){
+           console.log(this.responseText);
+           todos = JSON.parse(this.responseText);
+           displayTodos(todos);
+         } else {
+           dump("Erreur pendant le chargement de la page.\n");
+         }
+
+      }
+    this.req.send(null);
+  },
+
+  saveTodo: function(todo){
+    //var data = new FormData();
+    //data.append('task', todo.task);
+    this.req.open('POST', this.prefix +'/todos', true);
+    this.req.onload = function () {
+      if(this.status == 201){ //response ok
+          // do something to response
+          console.log(this.responseText);
+          var todo = JSON.parse(this.responseText) ;
+          todos.push(todo);
+          addTodo(todo);
+        }else {
+          //handle error
+          alert(this.responseText)
+        }
+    };
+    this.req.send(JSON.stringify(todo));
+  },
+
+  updateTodo: function(todo){
+    var data = new FormData();
+    data.append('task', todo.task);
+    this.req.open('PUT', this.prefix +'/todos/' + todo.id, true);
+  //  this.req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    this.req.onload = function () {
+        if(this.status == 200){ //response ok
+          // do something to responsestatus
+          console.log(this.responseText);
+          var todo = JSON.parse(this.responseText) ;
+          updateTodoNode(todo);status
+        }else{
+          //handle error
+          alert(this.responseText)
+        }
+    };
+    this.req.send(JSON.stringify(todo));
+  },
+
+  deleteTodo: function(todoId){
+    this.req.open('DELETE', this.prefix +'/todos/' + todoId, true);
+    this.req.onload = function () {
+        // do something to response
+        if(this.status == 204){
+          removeTodoNode(todoId);
+        }else {
+          //handle error
+          alert(this.responseText);
+        }
+    };
+    this.req.send(null);
+  }
+
+
+}
+
+
+
+
+
+
+
+
+  var addTodo = function(todo){
+
+    var todoLi = document.createElement('li');
+    todoLi.setAttribute('todo-id', todo.id);
+
+    var todoSpan = document.createElement('span');
+    todoSpan.innerHTML = todo.task;
+
+    var editBtn = document.createElement('button');
+    editBtn.innerHTML = 'edit';
+    editBtn.addEventListener('click', function (evt){
+      editForm.classList.toggle('edit');
+
+      var li = this.parentNode;
+      selectedTodoId = li.getAttribute('todo-id');
+      var span = li.firstChild;
+      //tempTodo = span;
+
+      editTodoTxt.value = span.innerText;
+    });
+
+
+    var delBtn = document.createElement('button');
+    delBtn.innerHTML = 'delete';
+    delBtn.addEventListener('click', function(evt){
+      var li = this.parentNode;
+      var todoId = li.getAttribute('todo-id');
+      TodoStore.deleteTodo(todoId);
+    });
+
+
+    todoLi.appendChild(todoSpan);
+    todoLi.appendChild(editBtn);
+    todoLi.appendChild(delBtn);
+
+    todoUl.appendChild(todoLi);
+
+
+  }
+
+
+  var removeTodoNode = function(todoId){
+      var node = document.querySelector('li[todo-id=\"' + todoId + '\"]');
+      node.remove();
+  }
+
+  var updateTodoNode = function(todo){
+    var node = document.querySelector('li[todo-id=\"' + todo.id + '\"]');
+    var span = node.firstChild;
+    span.innerHTML =  todo.task;
+    editForm.classList.toggle('edit');
+  }
+
+
+
+
+  addTodoBtn.addEventListener('click', function(){
+    var todo =
+    {
+      task:addTodoTxt.value,
+      priority:1
+    };
+    TodoStore.saveTodo(todo);
+  } );
+
+  editTodoBtn.addEventListener('click', function(){
+    var todo =
+    {
+      id:selectedTodoId,
+      task:editTodoTxt.value,
+      priority:1
+    };
+    TodoStore.updateTodo(todo);
+
+
+  });
+
+
+  //load todos at startup
+  TodoStore.loadTodos();
+
+
+
+
+
+  </script>
+  </body>
+</html>
