@@ -1,9 +1,11 @@
+local cjson = require "cjson"
 local dao = require "todo-dao"
-local connect_opts = require "config"
+local connect_opts = require "todo-config"
 
+--SQL injection...
 local _M = {}
 
-_M.create = function()
+function _M.create()
   ngx.req.read_body()  -- explicitly read the req body
   local data = ngx.req.get_body_data()
   if data then
@@ -21,7 +23,7 @@ _M.create = function()
 
 end
 
-_M.delete = function(params)
+function _M.delete(params)
   local res, err = mysql_exec("DELETE FROM task where id = " ..params.id, connect_opts)
   if not res then
     ngx.status = 500
@@ -30,7 +32,7 @@ _M.delete = function(params)
   end
 end
 
-_M.update = function(params)
+function _M.update(params)
   ngx.req.read_body()  -- explicitly read the req body
   local data = ngx.req.get_body_data()
   if data then
@@ -47,17 +49,15 @@ _M.update = function(params)
 end
 
 
-_M.getAll = function()
+function _M.getAll()
 
   local res, err = mysql_exec("SELECT * FROM task", connect_opts)
   if not res then
     ngx.status = 500
   else
-    ngx.header.content_type = 'application/json';
     ngx.say(cjson.encode(res))
 
   end
-  --ngx.print(cjson.encode({name= "kikou", done= true}))
 end
 
 
