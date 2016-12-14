@@ -1,5 +1,5 @@
 # openresty-todo-app
-sample mini  todo app with openresty
+sample mini single-users todo app with openresty
 
 init db: see `conf/db.sql`
 tune your local db settings in `app/config.lua`
